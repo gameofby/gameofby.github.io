@@ -65,7 +65,6 @@ module.exports = () => {
     eslint: {
       dirs: ['app', 'components', 'layouts', 'scripts'],
     },
-    basePath: "/timelxy.github.io",
     output: 'export',
     images: {
       remotePatterns: [
