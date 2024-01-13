@@ -1,3 +1,10 @@
+---
+title: Hands-on Flink
+date: '2022-08-27'
+tags: ['Bigdata']
+draft: false
+---
+
 #  1. Getting Started
 [官方文档](https://nightlies.apache.org/flink/flink-docs-master/)
 
@@ -83,7 +90,7 @@ http://localhost:8081/  本机的dashboard
   }
   ```
   
-  - 判断为欺诈交易的条件：前置交易为小额（<1），紧接着大额交易（>500），并且间隔小于1分钟
+  - 判断为欺诈交易的条件：前置交易为小额（\<1），紧接着大额交易（>500），并且间隔小于1分钟
   - 实现：使用ValueState记录每个账户的状态（flag, timer）；在变更的时间节点维护好变更
   - 为啥要用ValueState？
     - 自动实现了针对每个Key上下文（这个例子中是account id）的状态保存
