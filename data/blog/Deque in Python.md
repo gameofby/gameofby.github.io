@@ -1,0 +1,99 @@
+[官方文档 3.12.4](https://docs.python.org/3/library/collections.html#collections.deque)
+
+这里主要总结下deque这个数据结构的特点和使用场景。 如果是关注具体用法，可以直接看官方文档里的示例，很清晰。
+
+# deque的特点
+底层实现上使用了双向链表（doubly linked list）
+
+线程安全
+
+deque是栈和队列的结合，又可以叫做“双端队列”。顾名思义，两端都可以append, pop
+
+list数据结构也提供了类似deque的能力，但是在左端进行append, pop操作时，时间复杂度是O(n)，因为要移动每个位置的底层数据。 相比之下，deque左端的pop, append操作，时间复杂度是近似O(1)
+
+但是，list任意位置的index读取是O(1)，而deque除了两端，中间位置的读取需要O(n)
+
+list和deque的类似操作对比如下：
+
+```python
+from collections import deque
+
+l = [1, 2, 3, 4]
+d = deque(l)
+
+# 右端pop
+l.pop()
+d.pop()
+
+# 右端append
+l.append()
+d.append()
+
+# 左端pop
+l.pop(0)
+d.popleft()
+
+# 左端append
+v = 0
+l.insert(0, v)
+d.appendleft(v)
+
+```
+
+# deque很有意思的几个使用场景
+
+1. 类Unix的tail命令实现
+
+因为deque支持固定长度maxlen，如果初始化的时候设定了maxlen，并且deque的实际长度已经等于maxlen，进一步在两端append，会把相反方向的头部“挤出”deque
+
+利用这个特点，可以实现tail文件尾部固定长度的工程。实现如下：
+
+```python
+def tail(filename, n=10):
+    """Return the last n lines of a file"""
+    with open(filename) as f:
+        return deque(f, n)
+```
+
+
+2. 实现[moving average](https://en.wikipedia.org/wiki/Moving_average)。和1类似，也是利用了maxlen
+
+```python
+def moving_average(iterable, n=3):
+	# moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
+    it = iter(iterable) # 如果iterable比较大，避免一次性加载到内存中，转为迭代器，一个一个处理
+    # 取it的前n-1个数字
+    d = deque(itertools.islice(it, n-1))
+    d.appendleft(0) # 边界兼容处理，让下面第一次循环执行完后，d中是前3个数字
+    s = sum(d)
+    for elem in it:
+        s += elem - d.popleft()
+        d.append(elem)
+        yield s / n
+```
+
+3. round-robin scheduler
+round-robin是负载均衡中常用的算法。通俗点就是轮着来。音乐循环播放。主要是利用deque的rotate方法
+
+```python
+def roundrobin(*iterables):
+    """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""
+    iterators = deque(map(iter, iterables))
+    while iterators:
+        try:
+            while True:
+                yield next(iterators[0]) #输出左端元素的第一个子元素
+                iterators.rotate(-1) #把右端元素挪到左端，进行一个环形循环
+        except StopIteration: # 如果左端头部元素已经没有next了，catch Exception
+            # Remove an exhausted iterator.
+            iterators.popleft()
+```
+
+4. 对deque进行slice或者指定位置删除
+```python
+def delete_nth(d, n):
+	"""类似list del d[n] 的deque实现"""
+    d.rotate(-n)
+    d.popleft()
+    d.rotate(n)
+```

@@ -1,0 +1,131 @@
+# Similarities and Differences
+
+
+1. heapq是堆算法的python库函数；PriorityQueue是优先队列数据结构对应的类
+2. queue.PriorityQueue基于heapq实现，加了thread-safety。性能上会慢
+3. queue.PriorityQueue只有queue的基本操作，没有heapq灵活
+
+# heapq
+[Heap queue algorithm](https://stackoverflow.com/questions/36991716/whats-the-difference-between-heapq-and-priorityqueue-in-python)
+
+`heap[k] <= heap[2*k+1]` and `heap[k] <= heap[2*k+2]`
+
+和textbook上的堆算法有两点不同：
+1. index从0开始
+2. 小顶堆。textbook更多是大顶，便于原地排序
+
+这两点使得heap可以基于python的list结构实现
+
+```python
+# 初始化空heap
+heap = []
+
+# 初始化heap, in-place
+heap = [3, 4, 2, 1]
+heapq.heapify(heap)
+
+# push、pop
+heapq.heappush(heap, 0)
+heapq.heapop(heap)
+
+# get smallest element
+heap[0]
+
+# sort by heap
+def heapsort(iterable):
+    h = []
+    for value in iterable:
+        heappush(h, value)
+    return [heappop(h) for i in range(len(h))]
+
+heapsort([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+
+
+```
+
+
+
+
+# queue.PriorityQueue
+
+[普通实现source code](https://github.com/python/cpython/blob/5113ed7a2b92e8beabebe5fe2f6e856c52fbe1a0/Lib/queue.py#L223)
+![](/images/priorityqueue1.png)
+[多线程安全实现source code](https://github.com/python/cpython/blob/5113ed7a2b92e8beabebe5fe2f6e856c52fbe1a0/Lib/asyncio/queues.py#L218)
+![](/images/priorityqueue2.png)
+
+基本使用
+```python
+from queue import PriorityQueue
+
+# 创建一个优先级队列对象
+queue = PriorityQueue()
+
+# 插入元素到队列中
+queue.put((2, 'B'))
+queue.put((1, 'A'))
+queue.put((3, 'C'))
+
+# 从队列中获取具有最高优先级的元素
+item = queue.get()
+print(item)  # 输出：(1, 'A')
+
+# 判断队列是否为空
+print(queue.empty())  # 输出：False
+
+# 遍历队列中的元素
+while not queue.empty():
+    item = queue.get()
+    print(item)
+
+# 输出：
+# (2, 'B')
+# (3, 'C')
+```
+
+
+# 高阶应用
+
+
+按priority排列，可以将item和priority作为entry输入
+>Entries are typically tuples of the form: (priority number, data).
+
+```python
+h = []
+heappush(h, (5, 'write code'))
+heappush(h, (7, 'release product'))
+heappush(h, (1, 'write spec'))
+heappush(h, (3, 'create tests'))
+heappop(h)
+
+# PriorityQueue类似
+
+```
+
+
+
+item之间比大小是按照sorted实现的（[参考](https://stackoverflow.com/questions/57487170/is-it-possible-to-pass-a-comparator-to-a-priorityqueue-in-python)），因此插入元素要可对比。当不可对比时，需要用类包装下原始数据结构，类中实现包含__lt__, \_\_eq\_\_方法
+
+```python
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+
+# 对不可比的ListNode的类进行包装，提供__lt__方法。 这样SortedLink就可以作为可比元素push到heapq中
+class SortedLink(object):
+	def __init__(self, p):
+		self.p = p
+
+	def __lt__(self, new):
+		return self.p.val < new.p.val
+
+lists = [
+	ListNode(3), 
+	ListNode(1), 
+	ListNode(2)
+]
+
+q = []
+for item in lists:
+	heapq.heappush(q, SortedLink(item))
+
+```
