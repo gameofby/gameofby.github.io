@@ -1,0 +1,37 @@
+---
+title: Internal of Python sortedcontainers
+date: '2024-01-23'
+tags: ['Python']
+draft: false
+---
+
+# Implementation Details
+
+和传统有序集合（比如Java中的TreeSet，底层是TreeMap，基于red-black tree实现）实现最大的不同是，没有完全使用平衡二叉树结构
+
+## SortedList
+[官方链接](https://grantjenks.com/docs/sortedcontainers/implementation.html)
+[notion](https://www.notion.so/Implementation-Details-Sorted-Containers-2-4-0-documentation-17081fd341fb47c9af63ba601fe9111d?pvs=4)
+
+基于 **二维排序list + 长度二叉搜索树** 实现。核心维护了下面三个内部变量：
+>\_lists: the list of lists, each member is a sorted sublist of elements
+ \_maxes: contains the maximum element in each of the sublists. This is used for fast binary-search.
+ \_index: maintains a tree of pair-wise sums of the lengths of the lists
+
+二维排序list维护了load factor，默认值是1000，在总数据量为1kw（平方根为3000左右）的时候works well。如果总数据量超过1kw，load factor应该取总数据量平均值的平方根或者立方根），用来保持balanced。类似B-tree的branch factor
+
+**查询** 分两步
+>First the _maxes list, also known as the “maxes” index, is bisected which yields the position of a sorted sublist. 
+>Then that sublist is bisected for the location of the element
+
+
+\_index（第二维数组长度的二叉搜索树）变量，主要用来快速从全局index转为sublist index, vice-versa。比如全局index是8，实际在二维排序数组中index可能是(2,3)，用于这两种index快速互相转换
+
+**删除和插入：** 由于有load factor，第二维数组实际长度比较短，执行插入和删除也不费事
+
+
+# SortedSet, SortedSet
+
+基本数据结构都是SortedList
+
+SortedSet额外维护了一个python built-in set，用来实现set的相关操作
