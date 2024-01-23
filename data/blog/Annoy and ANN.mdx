@@ -1,0 +1,67 @@
+---
+title: Deque in Python
+date: '2024-01-23'
+tags: ['ANN', 'RAG']
+draft: false
+---
+
+
+# Notion
+
+[Nearest neighbor search](https://en.wikipedia.org/wiki/Nearest_neighbor_search)
+
+ANN属于其中一种近似检索，tradeoff between searching speed and actual nearest neighbor
+
+>In some applications it may be acceptable to retrieve a "good guess" of the nearest neighbor. In those cases, we can use an algorithm which doesn't guarantee to return the actual nearest neighbor in every case, in return for improved speed or memory savings. Often such an algorithm will find the nearest neighbor in a majority of cases, but this depends strongly on the dataset being queried.
+
+
+# ANN-Benchmarks
+
+[GitHub](https://github.com/nmslib/nmslib) [Official site](https://ann-benchmarks.com/) [Paper](https://arxiv.org/abs/1807.05614)
+
+annoy的作者eric发起的项目，用来作为对比基准，来评估各种ann算法的效果。  核心结果是比较Recall(true nearest neighbor的召回率) 和Queries per second（检索qps）.
+
+当前公司项目中用到的，是HnswSQ+FIX16（量化类型），向量库使用的nmslib
+
+# [Annoy](https://github.com/spotify/annoy)
+
+https://github.com/spotify/annoy/blob/main/README.rst
+特色
+1. 可以静态文件作为index，意味着可以在不同的进程之间share index
+2. 解耦了index的创建和加载，因为可以方便地传递index文件，加载到内存中
+
+好处是，index只用build一遍，就可以在生产环境、hadoop job等，理论上任何进程都可以加载index
+
+
+
+https://www.slideshare.net/erikbern/approximate-nearest-neighbor-methods-and-vector-models-nyc-ml-meetup
+这是作者在纽约ML meetup分享的slides，好的是直观有趣，但是一些细节slides上没有详细阐述
+
+
+# Internal
+https://erikbern.com/2015/09/24/nearest-neighbor-methods-vector-models-part-1
+https://erikbern.com/2015/10/01/nearest-neighbors-and-vector-models-part-2-how-to-search-in-high-dimensional-spaces.html
+这两篇是对slide的补充说明，很详细了。  中文互联网的博客，也基本都翻译的这两篇。  但是关于搜索过程中，到底怎么选left、right，没说透。  结合chatgpt和源码大概理解了，核心步骤如下
+
+Preprocessing time:
+
+1. Build up a bunch of binary trees. For each tree, split all points recursively by random hyperplanes.
+
+Query time:
+
+1. Insert the root of each tree into the priority queue
+2. Until we have _search_k _candidates, search all the trees using the priority queue（search过程中，按照query point和hyperplane的距离计算，近的先放入priority，远的次之）
+3. Remove duplicate candidates
+4. Compute distances to candidates
+5. Sort candidates by distance
+6. Return the top ones
+
+
+
+
+
+
+
+
+
+
